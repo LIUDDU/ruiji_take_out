@@ -90,6 +90,7 @@ public class DishController {
         //处理列表数据
         List<DishDTO> list = records.stream().map((item) -> {
 
+
             DishDTO dishDTO = new DishDTO();
             //将pageInfo的数据拷贝到dishDTOPage中
             BeanUtils.copyProperties(item, dishDTO);
