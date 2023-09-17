@@ -21,7 +21,6 @@ public class RedisConfig extends CachingConfigurerSupport {
     @Resource
     private RedisConnectionFactory redisConnectionFactory;
 
-
     //为了方便在图形化界面，查看数据
     @Bean
     public RedisTemplate<Object,Object> redisTemplate(RedisConnectionFactory redisConnectionFactory){
