@@ -15,11 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +44,9 @@ public class DishController {
     @Autowired
     private DishFlavorService dishFlavorService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     /**
      * 用于添加菜品
      * @param dishDTO
@@ -52,6 +58,17 @@ public class DishController {
         log.info("dishDTO数据：{}",dishDTO);
 
         Boolean insertDishResult = dishService.saveDishAndDishFlavor(dishDTO);
+
+        //优化
+        //清理缓存，防止更改信息，出现数据使用缓存中数据，出现数据信息不一致的情况
+        //第一种，清除所有菜品的缓存
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
+
+//        //第二种，精确清除菜品的缓存
+//        String key = "dish_" + dishDTO.getCategoryId() + "_1";
+//        redisTemplate.delete(key);
+
 
         if (!insertDishResult){
             return R.error("添加失败");
@@ -150,6 +167,16 @@ public class DishController {
 
         Boolean updateResult = dishService.updateDishAndFlavor(dishDTO);
 
+        //优化
+        //清理缓存，防止更改信息，出现数据使用缓存中数据，出现数据信息不一致的情况
+        //第一种，清除所有菜品的缓存
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
+
+//        //第二种，精确清除菜品的缓存
+//        String key = "dish_" + dishDTO.getCategoryId() + "_1";
+//        redisTemplate.delete(key);
+
         if (!updateResult){
             return R.error("修改菜品失败");
         }
@@ -180,6 +207,12 @@ public class DishController {
         });
         boolean updateBatchByIdResult = dishService.updateBatchById(dishes);
 
+        //优化
+        //清理缓存，防止更改信息，出现数据使用缓存中数据，出现数据信息不一致的情况
+        //第一种，清除所有菜品的缓存
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
+
         if (!updateBatchByIdResult){
             R.error("状态修改失败");
         }
@@ -197,6 +230,12 @@ public class DishController {
 
 
         boolean removeResult = dishService.removeByIds(ids);
+
+        //优化
+        //清理缓存，防止更改信息，出现数据使用缓存中数据，出现数据信息不一致的情况
+        //第一种，清除所有菜品的缓存
+        Set keys = redisTemplate.keys("dish_*");
+        redisTemplate.delete(keys);
 
         if (!removeResult){
             return R.error("删除失败");
@@ -233,9 +272,24 @@ public class DishController {
 //            R.error("没有相关菜品");
 //        }
 //        return R.success(list);
+        //用于保存返回的数据
+        List<DishDTO> dishDTOS = null;
+
+        //优化，将菜品加入缓存
+        //动态拼接一个key用于缓存到redis中的key
+        //String key = dish_1397844391040167938_1
+        String key = "dish_" + dish.getCategoryId() + "_" + dish.getStatus();
+        //1.查询redis中有没有对应的菜品信息
+        dishDTOS = (List<DishDTO>) redisTemplate.opsForValue().get(key);
+
+        if (dishDTOS != null){
+            //2.如果存在则直接返回，不需要查询数据库
+            return R.success(dishDTOS);
+        }
 
         //基于后台菜品，改造移动端也可以使用，移动端需要dishFlavor
         log.info("分类id:categoryId:{}",dish.getCategoryId());
+        //构造条件
         //根据分类id查询菜品
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
         //组装条件，根据分类id查询菜品
@@ -252,7 +306,7 @@ public class DishController {
 
         //处理List<Dish>，返回List<DishDTO>供管理端和移动端使用
 
-        List<DishDTO> dishDTOS = list.stream().map((item) -> {
+        dishDTOS = list.stream().map((item) -> {
 
             DishDTO dishDTO = new DishDTO();
             //对象拷贝
@@ -268,6 +322,8 @@ public class DishController {
             return dishDTO;
         }).collect(Collectors.toList());
 
+        //3.如果不存在，查询数据库，并将查询结果缓存到redis中,缓存有效时间60分钟
+        redisTemplate.opsForValue().set(key,dishDTOS,60, TimeUnit.MINUTES);
         return R.success(dishDTOS);
     }
 
