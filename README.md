@@ -1,7 +1,6 @@
 # ruiji_take_out
 一个外卖小项目 后端技术 采用springboot + mybatis-plus, 采用mysql数据库
-后经过优化加入redis缓存短信验证码，以及菜品等的数据
-
+这是一个基础版本
 
 后台登录网址
 http://localhost:8080/backend/page/login/login.html
