@@ -9,8 +9,8 @@ http://localhost:8080/backend/page/login/login.html
 http://localhost:8080/front/page/login.html
 
 本项目的短信发送验证码功能没有开发
-验证码可在sendMsg接口的返回的数据中查看
-也可在redis中查看
+验证码可在sendMsg接口的返回的数据中查看，
+也可在redis中查看短信验证码
 ![image](https://github.com/LIUDDU/ruiji_take_out/assets/134271781/3c3ad425-295a-4b77-b17f-bab7a1b03598)
 
 
