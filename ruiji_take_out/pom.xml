@@ -84,10 +84,15 @@
             <version>2.1.0</version>
         </dependency>
 
+        <!--使用redis作为缓存-->
         <!--redis-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
         <!--测试场景-->
