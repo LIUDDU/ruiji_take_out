@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ public class SetmealController {
      * @return
      */
     @PostMapping
+    @CacheEvict(value = "setmealCache",allEntries = true)
     public R<String> insertSetmeal(@RequestBody SetmealDTO setmealDTO){
 
 
@@ -132,6 +135,7 @@ public class SetmealController {
      * @return
      */
     @PostMapping("/status/{status}")
+    @CacheEvict(value = "setmealCache",allEntries = true)
     public R<String> updateStatus(@PathVariable("status") Integer status,
                                   @RequestParam("ids") List<Long> ids){
 
@@ -163,6 +167,7 @@ public class SetmealController {
      * @return
      */
     @DeleteMapping
+    @CacheEvict(value = "setmealCache",allEntries = true)
     public R<String> delete(@RequestParam("ids") List<Long> ids){
 
         log.info("要删除的ids:{}",ids);
@@ -202,6 +207,7 @@ public class SetmealController {
      * @return
      */
     @PutMapping
+    @CacheEvict(value = "setmealCache",allEntries = true)
     public R<String> update(@RequestBody SetmealDTO setmealDTO){
         log.info("SetmealDTO:{}",setmealDTO);
 
@@ -217,10 +223,16 @@ public class SetmealController {
 
     /**
      * 用于移动端套餐的显示
+     *
+     * 使用spring cache框架注解，进行缓存
+     *
+     * 若缓存中有则不查数据库
+     *
      * @param setmeal
      * @return
      */
     @GetMapping("/list")
+    @Cacheable(value = "setmealCache", key = "#setmeal.categoryId + '_' + #setmeal.status",unless = "#result == null")
     public R<List<SetmealDTO>> list(Setmeal setmeal){
 
         log.info("setmeal:{}",setmeal);
